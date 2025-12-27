@@ -1,0 +1,12 @@
+{
+    "page_type": "product_page",
+    "fields": [
+      "name",
+      "benefits_block",
+      "usage_block",
+      "safety_block",
+      "pricing_block"
+    ],
+    "description": "Template for assembling structured product detail pages"
+  }
+  

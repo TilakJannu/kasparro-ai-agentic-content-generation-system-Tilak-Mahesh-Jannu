@@ -1,0 +1,23 @@
+{
+  "page_type": "product_page",
+  "name": "GlowBoost Vitamin C Serum",
+  "benefits_block": [
+    "Brightening",
+    "Fades dark spots"
+  ],
+  "usage_block": {
+    "instructions": "Apply 2–3 drops in the morning before sunscreen",
+    "recommended_time": "Morning"
+  },
+  "safety_block": {
+    "side_effects": "Mild tingling for sensitive skin",
+    "applicable_skin_types": [
+      "Oily",
+      "Combination"
+    ]
+  },
+  "pricing_block": {
+    "price": 699,
+    "currency": "INR"
+  }
+}

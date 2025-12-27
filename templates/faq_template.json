@@ -1,0 +1,8 @@
+{
+    "page_type": "faq_page",
+    "fields": [
+      "questions"
+    ],
+    "description": "Template for assembling FAQ pages from generated user questions"
+  }
+  
