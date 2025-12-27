@@ -1,287 +1,195 @@
 Multi-Agent Content Generation System
+1. Introduction
 
-1. Problem Statement
+Modern digital platforms often need to generate consistent, structured content (FAQs, product pages, comparisons) from limited structured data such as product catalogs.
+Many systems solve this using monolithic scripts, which quickly become difficult to extend, test, or maintain.
 
-Modern content platforms often need to generate large volumes of structured, reusable content from limited structured data (for example, product catalogs).
-Traditional approaches rely on monolithic scripts or tightly coupled logic, making systems hard to scale, extend, or maintain.
+This project addresses that problem by designing a modular, agentic content generation system.
+Instead of one large script, the system is composed of independent agents, reusable logic blocks, and declarative templates that work together to produce machine-readable content pages.
 
-The objective of this project is to design and implement a production-style agentic automation system that transforms a small, fixed product dataset into multiple machine-readable content pages, while demonstrating:
+The focus of this project is system design and automation, not creative writing or UI development.
 
-clear agent boundaries
+2. What the System Does
 
-modular system design
+Given a single structured product dataset, the system automatically generates:
 
-reusable content logic
+an FAQ page containing categorized user questions,
 
-deterministic, structured outputs
+a Product Description page built from reusable content blocks,
 
-The focus is on engineering design and automation, not creative content writing or UI development.
+a Comparison page against a fictional but structured product,
 
-2. Solution Overview
+All outputs are produced as clean JSON files, suitable for APIs, CMS pipelines, or further automation.
 
-This project implements a multi-agent content generation pipeline that processes a single product dataset and automatically produces:
+The system is deterministic:
 
-an FAQ page (categorized user questions),
+the same input will always produce the same output.
 
-a product description page,
+3. Design Philosophy
 
-a comparison page against a fictional product,
+The system is built around four core principles:
 
-all as clean JSON outputs.
+1. Single Responsibility
 
-The system is intentionally designed as a set of cooperating agents, each with a single responsibility, coordinated by a thin orchestrator.
-Reusable logic blocks and declarative templates ensure that the system is extensible and maintainable.
+Each agent does one job only, with a clear input and output.
 
-Key design goals:
+2. Separation of Concerns
 
-separation of concerns
+Agents coordinate work
 
-composability
+Logic blocks transform data
 
-determinism
+Templates define structure
 
-machine-readability
+The orchestrator manages flow
 
-3. Scope & Assumptions
-In Scope
+No layer does another layer’s job.
 
-Processing a single structured product dataset
+3. Reusability
 
-Rule-based generation of user questions
+Logic blocks and agents are designed to be reused across:
 
-Template-driven assembly of multiple content pages
+multiple page types
 
-JSON-only, machine-readable outputs
+different products
 
-Deterministic execution (same input → same output)
+future workflows
 
-Out of Scope
+4. Machine-First Output
 
-External data sources or research
+All outputs are structured JSON — not prose — ensuring reliability and downstream compatibility.
 
-LLM prompting or creative text generation
+4. System Architecture Overview
 
-UI or frontend development
+At a high level, the system works as a step-based agent pipeline:
 
-Database persistence
-
-Natural language optimization
-
-Assumptions
-
-The input product data is trusted and provided in the expected structure
-
-All generated content must be strictly derived from the given dataset
-
-The fictional comparison product is intentionally minimal and static
-
-4. System Architecture
-4.1 High-Level Architecture
-
-The system follows a layered agentic architecture:
-
-Raw Product Data
-      ↓
+Product Data
+   ↓
 ProductParserAgent
-      ↓
+   ↓
 QuestionGenerationAgent
-      ↓
+   ↓
 ContentBlockAgent
-      ↓
+   ↓
 TemplateAssemblyAgent
-      ↓
+   ↓
 OutputValidationAgent
-      ↓
+   ↓
 JSON Outputs
 
 
-A central Orchestrator manages execution order and data flow but does not perform any transformation or business logic.
+A thin Orchestrator coordinates execution but contains no business logic.
 
-4.2 Design Principles
-Single-Responsibility Agents
-
-Each agent performs exactly one task and exposes a clear input/output contract.
-
-Reusable Logic Blocks
-
-All domain-specific logic is implemented as pure functions, independent of agents and templates.
-
-Template-Driven Assembly
-
-Page structure is defined declaratively via templates, not hardcoded logic.
-
-Machine-Readable First
-
-All intermediate and final artifacts are structured objects. Final outputs are valid JSON.
-
-5. Agent Design & Responsibilities
+5. Agent Responsibilities
 5.1 ProductParserAgent
 
-Responsibility
+Purpose: Normalize and validate raw product input.
 
-Validate raw product input
+Converts raw product data into a canonical internal model
 
-Normalize data into a canonical internal model
+Ensures consistent field structure for downstream agents
 
-Input
+Performs no content generation
 
-Raw product dataset
-
-Output
-
-Normalized product object with stable field structure
-
-Key Characteristics
-
-Pure transformation
-
-No content generation
-
-No page awareness
+This agent acts as the foundation of the pipeline.
 
 5.2 QuestionGenerationAgent
 
-Responsibility
+Purpose: Discover user intent.
 
-Automatically generate categorized user questions
+Automatically generates categorized user questions
 
-Derive questions using deterministic, rule-based logic
+Uses rule-based logic derived from product attributes
 
-Input
+Produces no answers and no formatting
 
-Normalized product model
+This agent answers the question:
 
-Output
-
-Dictionary of categorized questions (Informational, Usage, Safety, Purchase, Comparison)
-
-Key Characteristics
-
-No answers
-
-No formatting
-
-Represents user intent discovery only
+“What would users naturally ask about this product?”
 
 5.3 ContentBlockAgent
 
-Responsibility
+Purpose: Build reusable content components.
 
-Compose reusable content blocks by invoking logic functions
+Invokes pure logic blocks to extract benefits, usage, safety, and pricing
 
-Input
+Produces named, structured content blocks
 
-Normalized product model
+Has no knowledge of pages or templates
 
-Output
-
-Named content blocks (benefits, usage, safety, pricing)
-
-Key Characteristics
-
-Page-agnostic
-
-Reusable across multiple templates
-
-No orchestration logic
+These blocks are reusable across multiple page types.
 
 5.4 TemplateAssemblyAgent
 
-Responsibility
+Purpose: Assemble pages using templates.
 
-Assemble page-level structures using declarative templates
+Reads declarative templates
 
-Input
+Injects required data fields
 
-Template definition
+Produces page-level structured objects
 
-Required data fields
-
-Output
-
-Structured page object
-
-Key Characteristics
-
-Generic and template-driven
-
-No content generation
-
-Enforces required fields
+It performs composition only, with no content logic.
 
 5.5 OutputValidationAgent
 
-Responsibility
+Purpose: Act as the final safety gate.
 
-Validate assembled pages before serialization
+Validates page structure based on page type
 
-Enforce page-type–specific structural rules
+Ensures required fields are present
 
-Input
+Rejects invalid or incomplete outputs
 
-Assembled page object
-
-Output
-
-Validated page or explicit error
-
-Key Characteristics
-
-Acts as a final gatekeeper
-
-No data mutation
-
-Ensures machine-readability
+This guarantees machine-readable correctness.
 
 6. Reusable Logic Blocks
 
-Logic blocks are implemented as pure functions that transform structured input into structured output.
+Logic blocks are implemented as pure functions that:
+
+accept structured input,
+
+return structured output,
+
+contain no side effects.
 
 Examples include:
 
-benefits extraction
+extracting benefits,
 
-usage structuring
+structuring usage instructions,
 
-safety information aggregation
+aggregating safety information,
 
-pricing normalization
+normalizing pricing,
 
-product comparison assembly
+assembling comparison data.
 
-These blocks:
-
-have no side effects
-
-contain no orchestration logic
-
-are independently testable
-
-are reusable across page types
+Because they are pure and isolated, these blocks are easy to test and reuse.
 
 7. Templates
 
-Templates are data-only JSON definitions that specify:
+Templates are data-only JSON definitions that describe:
 
-page type
+page type,
 
-required fields
+required fields,
 
-structural expectations
+structural expectations.
 
-Templates do not:
+They do not contain:
 
-generate content
+logic,
 
-apply formatting rules
+conditionals,
 
-contain logic
+content generation.
 
-This allows new page types to be added by defining new templates without modifying existing agents.
+This makes the system easy to extend — new pages can be added by defining new templates without modifying agents.
 
 8. Orchestration Flow
 
-The orchestrator coordinates execution as a deterministic step pipeline:
+The orchestrator executes the pipeline in a clear, deterministic order:
 
 Parse and normalize product data
 
@@ -295,21 +203,21 @@ Validate outputs
 
 Write final JSON files
 
-The orchestrator contains no business logic, ensuring agents remain reusable and independently testable.
+The orchestrator is intentionally thin and transparent.
 
 9. Testing Strategy
 
-Testing is performed at the component level, not via end-to-end mocks.
+Testing is performed at the component level:
 
-Logic blocks are tested in isolation for correctness and determinism
+Logic blocks are tested independently
 
-Template assembly is tested for required-field enforcement
+Template assembly is tested for contract enforcement
 
-Validation agent is tested for acceptance and rejection cases
+Output validation is tested for acceptance and rejection cases
 
-This approach ensures correctness while avoiding unnecessary complexity.
+This ensures correctness without unnecessary complexity.
 
-10. Extensibility & Maintainability
+10. Extensibility
 
 The system is designed to scale naturally:
 
@@ -319,25 +227,11 @@ New content rules → add new logic blocks
 
 New workflows → add new agents
 
-Existing agents and logic blocks remain unchanged, minimizing regression risk.
+Existing components remain unchanged, minimizing risk.
 
-11. Design Rationale
+11. Conclusion
 
-This architecture mirrors real-world production agentic systems where:
-
-responsibilities are explicit,
-
-logic is composable,
-
-orchestration is transparent,
-
-outputs are deterministic and machine-consumable.
-
-The system demonstrates engineering maturity rather than content creativity.
-
-12. Conclusion
-
-This project successfully demonstrates the design and implementation of a modular, agentic content generation system with:
+This project demonstrates how a production-style agentic system can be built using:
 
 clear agent boundaries,
 
@@ -345,6 +239,6 @@ reusable logic blocks,
 
 declarative templates,
 
-deterministic JSON outputs.
+deterministic orchestration.
 
-The resulting system is readable, extensible, and aligned with production-grade automation principles.
+The result is a clean, extensible, and maintainable content automation pipeline aligned with real-world engineering practices.
