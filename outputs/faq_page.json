@@ -1,0 +1,30 @@
+{
+  "page_type": "faq_page",
+  "questions": {
+    "Informational": [
+      "What is GlowBoost Vitamin C Serum?",
+      "What benefits does GlowBoost Vitamin C Serum provide?",
+      "What are the key ingredients in GlowBoost Vitamin C Serum?",
+      "What is the concentration of Vitamin C in GlowBoost Vitamin C Serum?"
+    ],
+    "Usage": [
+      "How should GlowBoost Vitamin C Serum be used?",
+      "Can this product be used daily?",
+      "Should it be used in the morning or evening?"
+    ],
+    "Safety": [
+      "Are there any side effects?",
+      "Is this product suitable for sensitive skin?",
+      "Is mild tingling normal?"
+    ],
+    "Purchase": [
+      "What is the price of this product?",
+      "Is this product worth the price?",
+      "Is this product worth the price?"
+    ],
+    "Comparison": [
+      "How does GlowBoost Vitamin C Serum compare to similar products?",
+      "What makes GlowBoost Vitamin C Serum different from other serums?"
+    ]
+  }
+}

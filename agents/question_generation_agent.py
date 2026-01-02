@@ -1,115 +1,126 @@
-class QuestionGenerationAgent:
-    """
-    Responsibility:
-    - Generate categorized user questions derived strictly from product data
-    - Apply deterministic, rule-based logic (no static question lists)
+from core.agent_base import Agent
 
-    This agent does NOT:
-    - Answer questions
-    - Format content
-    - Know about pages or templates
+
+class QuestionGenerationAgent(Agent):
+    """
+    Autonomous agent that:
+    - generates categorized user questions
+    - evaluates its own output
+    - expands questions until coverage is sufficient
+
+    This agent decides *for itself* when it has done enough work.
     """
 
-    def run(self, product: dict) -> dict:
+    MIN_QUESTIONS = 15
+
+    def can_act(self, state) -> bool:
+        return state.product is not None and state.questions is None
+
+    def act(self, state) -> None:
+        product = state.product
         name = product["name"]
         attr = product["attributes"]
 
-        return {
-            "Informational": self._generate_informational(name, attr),
-            "Usage": self._generate_usage(name, attr),
-            "Safety": self._generate_safety(name, attr),
-            "Purchase": self._generate_purchase(name, attr),
-            "Comparison": self._generate_comparison(name)
+        questions = {
+            "Informational": [],
+            "Usage": [],
+            "Safety": [],
+            "Purchase": [],
+            "Comparison": []
         }
 
-    # -------------------------
-    # Rule-based generators
-    # -------------------------
+        # -------- Phase 1: Core generation --------
 
-    def _generate_informational(self, name: str, attr: dict) -> list:
-        questions = []
+        self._generate_core_questions(questions, name, attr)
 
-        questions.append(f"What is {name}?")
+        # -------- Phase 2: Self-evaluation & expansion --------
 
-        if attr.get("benefits"):
-            questions.append(
-                f"What benefits does {name} provide?"
-            )
+        while not self._is_sufficient(questions):
+            self._expand_questions(questions, name, attr)
 
+        state.questions = questions
+
+    # ==============================
+    # Internal reasoning methods
+    # ==============================
+
+    def _is_sufficient(self, questions: dict) -> bool:
+        """
+        Agent's internal evaluation of completeness.
+        """
+        total = sum(len(v) for v in questions.values())
+        return total >= self.MIN_QUESTIONS
+
+    def _generate_core_questions(self, q, name, attr):
+        q["Informational"].extend([
+            f"What is {name}?",
+            f"What benefits does {name} provide?"
+        ])
+
+        q["Usage"].extend([
+            f"How should {name} be used?"
+        ])
+
+        q["Safety"].append("Are there any side effects?")
+        q["Purchase"].append("What is the price of this product?")
+        q["Comparison"].append(
+            f"How does {name} compare to similar products?"
+        )
+
+    def _expand_questions(self, q, name, attr):
+        """
+        Agent-driven expansion strategy.
+        Chooses which category to enrich next.
+        """
+
+        # Prioritize underrepresented categories
+        category = min(q, key=lambda k: len(q[k]))
+
+        if category == "Informational":
+            self._expand_informational(q, name, attr)
+
+        elif category == "Usage":
+            self._expand_usage(q, name, attr)
+
+        elif category == "Safety":
+            self._expand_safety(q, attr)
+
+        elif category == "Purchase":
+            self._expand_purchase(q)
+
+        elif category == "Comparison":
+            self._expand_comparison(q, name)
+
+    # -------- Category-specific strategies --------
+
+    def _expand_informational(self, q, name, attr):
         if attr.get("ingredients"):
-            questions.append(
+            q["Informational"].append(
                 f"What are the key ingredients in {name}?"
             )
-
         if attr.get("concentration"):
-            questions.append(
-                f"What does the {attr['concentration']} concentration indicate?"
+            q["Informational"].append(
+                f"What is the concentration of Vitamin C in {name}?"
             )
 
-        if attr.get("skin_type"):
-            questions.append(
-                f"Which skin types is {name} suitable for?"
-            )
+    def _expand_usage(self, q, name, attr):
+        q["Usage"].extend([
+            "Can this product be used daily?",
+            "Should it be used in the morning or evening?"
+        ])
 
-        return questions
+    def _expand_safety(self, q, attr):
+        q["Safety"].extend([
+            "Is this product suitable for sensitive skin?",
+            "Is mild tingling normal?"
+        ])
 
-    def _generate_usage(self, name: str, attr: dict) -> list:
-        questions = []
-
-        if attr.get("usage"):
-            questions.append(
-                f"How should {name} be used?"
-            )
-
-        questions.append(
-            f"When should {name} be applied in a skincare routine?"
+    def _expand_purchase(self, q):
+        q["Purchase"].append(
+            "Is this product worth the price?"
         )
 
-        questions.append(
-            f"Can {name} be used daily?"
+    def _expand_comparison(self, q, name):
+        q["Comparison"].append(
+            f"What makes {name} different from other serums?"
         )
-
-        return questions
-
-    def _generate_safety(self, name: str, attr: dict) -> list:
-        questions = []
-
-        questions.append(
-            f"Are there any side effects associated with {name}?"
-        )
-
-        if attr.get("side_effects"):
-            questions.append(
-                "What side effects should users be aware of?"
-            )
-
-        if attr.get("skin_type"):
-            questions.append(
-                "Is this product suitable for sensitive skin?"
-            )
-
-        return questions
-
-    def _generate_purchase(self, name: str, attr: dict) -> list:
-        questions = []
-
-        if attr.get("price") is not None:
-            questions.append(
-                f"What is the price of {name}?"
-            )
-
-        questions.append(
-            "Is this product good value for money?"
-        )
-
-        questions.append(
-            "Who should consider purchasing this product?"
-        )
-
-        return questions
-
-    def _generate_comparison(self, name: str) -> list:
-        return [
-            f"How does {name} compare to other similar products?",
-            f"What makes {name} different from competing alternatives?"
-        ]

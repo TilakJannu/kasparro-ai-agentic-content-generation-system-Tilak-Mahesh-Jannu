@@ -1,54 +1,38 @@
+from core.agent_base import Agent
 from logic_blocks.benefits import build_benefits_block
 from logic_blocks.usage import build_usage_block
 from logic_blocks.safety import build_safety_block
 from logic_blocks.pricing import build_pricing_block
 
 
-class ContentBlockAgent:
+class ContentBlockAgent(Agent):
     """
-    Responsibility:
-    - Compose reusable content blocks by invoking pure logic functions
+    Autonomous agent responsible for constructing reusable
+    content blocks from normalized product data.
 
-    This agent performs:
-    ✔ content block composition
-    ✔ structured aggregation
-
-    This agent does NOT:
-    ✘ generate questions
-    ✘ assemble pages
-    ✘ apply templates
-    ✘ write output files
+    This agent:
+    - reacts to the presence of product data
+    - builds content blocks exactly once
+    - publishes results to shared state
     """
 
-    def run(self, product: dict) -> dict:
+    def can_act(self, state) -> bool:
         """
-        Entry point for the agent.
-
-        Input:
-        - Normalized product model
-
-        Output:
-        - Dictionary of named content blocks
+        The agent can act if:
+        - product data exists
+        - content blocks have not yet been created
         """
-        return {
-            "benefits_block": self._build_benefits(product),
-            "usage_block": self._build_usage(product),
-            "safety_block": self._build_safety(product),
-            "pricing_block": self._build_pricing(product)
+        return state.product is not None and not state.content_blocks
+
+    def act(self, state) -> None:
+        """
+        Build reusable content blocks using pure logic functions.
+        """
+        product = state.product
+
+        state.content_blocks = {
+            "benefits_block": build_benefits_block(product),
+            "usage_block": build_usage_block(product),
+            "safety_block": build_safety_block(product),
+            "pricing_block": build_pricing_block(product)
         }
-
-    # -------------------------
-    # Internal composition
-    # -------------------------
-
-    def _build_benefits(self, product: dict) -> list:
-        return build_benefits_block(product)
-
-    def _build_usage(self, product: dict) -> dict:
-        return build_usage_block(product)
-
-    def _build_safety(self, product: dict) -> dict:
-        return build_safety_block(product)
-
-    def _build_pricing(self, product: dict) -> dict:
-        return build_pricing_block(product)

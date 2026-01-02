@@ -14,14 +14,14 @@
       "price": 699
     },
     "product_b": {
-      "name": "RadiancePlus Serum",
-      "ingredients": [
-        "Vitamin C"
-      ],
-      "benefits": [
-        "Brightening"
-      ],
-      "price": 899
+      "name": "RadiancePlus Vitamin C Serum",
+      "attributes": {
+        "concentration": "8%",
+        "benefits": [
+          "Brightening"
+        ],
+        "price": 899
+      }
     }
   }
 }

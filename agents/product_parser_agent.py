@@ -1,74 +1,39 @@
-class ProductParserAgent:
+from core.agent_base import Agent
+
+class ProductParserAgent(Agent):
     """
-    Responsibility:
-    - Validate raw product input
-    - Normalize it into a canonical internal product model
+    Bootstrap agent responsible for parsing and normalizing
+    raw product input data into a canonical internal format.
 
-    This agent performs:
-    ✔ validation
-    ✔ normalization
-
-    This agent does NOT perform:
-    ✘ content generation
-    ✘ formatting
-    ✘ orchestration
+    This agent:
+    - acts only once
+    - publishes normalized product data to shared state
+    - does not depend on any other agent
     """
 
-    REQUIRED_FIELDS = [
-        "name",
-        "concentration",
-        "skin_type",
-        "key_ingredients",
-        "benefits",
-        "how_to_use",
-        "side_effects",
-        "price"
-    ]
+    def can_act(self, state) -> bool:
+        """
+        The agent can act if:
+        - raw input exists
+        - product has not yet been parsed
+        """
+        return state.raw_input is not None and state.product is None
 
-    def run(self, raw_data: dict) -> dict:
+    def act(self, state) -> None:
         """
-        Entry point for the agent.
+        Normalize raw product data and store it in shared state.
         """
-        self._validate_input(raw_data)
-        normalized_product = self._normalize(raw_data)
-        return normalized_product
+        raw = state.raw_input
 
-    def _validate_input(self, raw_data: dict):
-        """
-        Ensures all required fields are present.
-        """
-        missing_fields = [
-            field for field in self.REQUIRED_FIELDS
-            if field not in raw_data
-        ]
-
-        if missing_fields:
-            raise ValueError(
-                f"Missing required product fields: {missing_fields}"
-            )
-
-    def _normalize(self, raw_data: dict) -> dict:
-        """
-        Converts raw product data into a stable internal schema
-        used consistently across the system.
-        """
-        return {
-            "name": raw_data["name"],
+        state.product = {
+            "name": raw["name"],
             "attributes": {
-                "concentration": raw_data["concentration"],
-                "skin_type": self._ensure_list(raw_data["skin_type"]),
-                "ingredients": self._ensure_list(raw_data["key_ingredients"]),
-                "benefits": self._ensure_list(raw_data["benefits"]),
-                "usage": raw_data["how_to_use"],
-                "side_effects": raw_data["side_effects"],
-                "price": raw_data["price"]
+                "concentration": raw.get("concentration"),
+                "skin_type": raw.get("skin_type"),
+                "ingredients": raw.get("key_ingredients"),
+                "benefits": raw.get("benefits"),
+                "usage": raw.get("how_to_use"),
+                "side_effects": raw.get("side_effects"),
+                "price": raw.get("price")
             }
         }
-
-    def _ensure_list(self, value):
-        """
-        Normalizes values into lists for downstream consistency.
-        """
-        if isinstance(value, list):
-            return value
-        return [value]

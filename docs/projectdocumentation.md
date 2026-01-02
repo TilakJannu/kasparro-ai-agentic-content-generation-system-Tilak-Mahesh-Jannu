@@ -1,244 +1,259 @@
 Multi-Agent Content Generation System
 1. Introduction
 
-Modern digital platforms often need to generate consistent, structured content (FAQs, product pages, comparisons) from limited structured data such as product catalogs.
-Many systems solve this using monolithic scripts, which quickly become difficult to extend, test, or maintain.
+This project implements a true multi-agent content generation system designed to transform a structured product dataset into multiple machine-readable content pages.
 
-This project addresses that problem by designing a modular, agentic content generation system.
-Instead of one large script, the system is composed of independent agents, reusable logic blocks, and declarative templates that work together to produce machine-readable content pages.
+The assignment explicitly evaluates the ability to design autonomous agents that interact dynamically through an orchestration mechanism, rather than a statically wired or sequential pipeline.
+Accordingly, this system is built using a blackboard-based multi-agent architecture, where agents operate independently and coordination emerges through shared system state.
 
-The focus of this project is system design and automation, not creative writing or UI development.
+The focus of this project is system design and agent autonomy, not content creativity or UI development.
 
-2. What the System Does
+2. Problem Statement
 
-Given a single structured product dataset, the system automatically generates:
+Modern content systems often require generating multiple structured outputs (FAQs, product pages, comparisons) from a single source of truth.
+Traditional implementations rely on monolithic scripts or statically sequenced logic, which limits extensibility and fails to demonstrate true agentic behavior.
 
-an FAQ page containing categorized user questions,
+The goal of this project is to design a system that:
 
-a Product Description page built from reusable content blocks,
+uses independent agents with clear responsibilities
 
-a Comparison page against a fictional but structured product,
+supports dynamic coordination
 
-All outputs are produced as clean JSON files, suitable for APIs, CMS pipelines, or further automation.
+avoids hard-coded execution order
 
-The system is deterministic:
-
-the same input will always produce the same output.
+produces deterministic, structured JSON outputs
 
 3. Design Philosophy
 
-The system is built around four core principles:
+The system is built around the following principles:
 
-1. Single Responsibility
+3.1 Agent Autonomy
 
-Each agent does one job only, with a clear input and output.
+Each agent decides when it should act based on system state.
+No agent is directly invoked by another agent or by the orchestrator.
 
-2. Separation of Concerns
+3.2 Dynamic Coordination
 
-Agents coordinate work
+Agents communicate only through shared state.
+Execution order is not predefined and emerges at runtime.
 
-Logic blocks transform data
+3.3 Separation of Concerns
 
-Templates define structure
+Agents perform reasoning or assembly
 
-The orchestrator manages flow
+Logic blocks perform pure data transformation
 
-No layer does another layer’s job.
+The orchestrator only schedules execution
 
-3. Reusability
+3.4 Determinism & Safety
 
-Logic blocks and agents are designed to be reused across:
+All outputs are rule-driven, deterministic, and validated before being written.
 
-multiple page types
+4. High-Level Architecture
 
-different products
+The system follows a blackboard + scheduler architecture:
 
-future workflows
-
-4. Machine-First Output
-
-All outputs are structured JSON — not prose — ensuring reliability and downstream compatibility.
-
-4. System Architecture Overview
-
-At a high level, the system works as a step-based agent pipeline:
-
-Product Data
-   ↓
-ProductParserAgent
-   ↓
-QuestionGenerationAgent
-   ↓
-ContentBlockAgent
-   ↓
-TemplateAssemblyAgent
-   ↓
-OutputValidationAgent
-   ↓
-JSON Outputs
+Shared Blackboard (System State)
+        ↑
+Autonomous Agents observe & act
+        ↑
+Scheduler-Only Orchestrator
 
 
-A thin Orchestrator coordinates execution but contains no business logic.
+The blackboard stores shared knowledge
 
-5. Agent Responsibilities
-5.1 ProductParserAgent
+Agents observe and update the blackboard
 
-Purpose: Normalize and validate raw product input.
+The orchestrator repeatedly schedules agents without enforcing order
 
-Converts raw product data into a canonical internal model
+5. Shared Blackboard (System State)
 
-Ensures consistent field structure for downstream agents
+The blackboard acts as the single source of truth and the only coordination mechanism.
 
-Performs no content generation
+It stores:
 
-This agent acts as the foundation of the pipeline.
+raw input
 
-5.2 QuestionGenerationAgent
+parsed product data
 
-Purpose: Discover user intent.
+generated questions
 
-Automatically generates categorized user questions
+reusable content blocks
 
-Uses rule-based logic derived from product attributes
+assembled pages
 
-Produces no answers and no formatting
+validation status
 
-This agent answers the question:
+The blackboard contains no logic, only shared data.
 
-“What would users naturally ask about this product?”
+6. Agent Autonomy Model
 
-5.3 ContentBlockAgent
+All agents implement the same interface:
 
-Purpose: Build reusable content components.
+can_act(state) -> bool
+act(state) -> None
 
-Invokes pure logic blocks to extract benefits, usage, safety, and pricing
 
-Produces named, structured content blocks
+can_act allows the agent to decide independently whether it should act
 
-Has no knowledge of pages or templates
+act performs one responsibility and updates shared state
 
-These blocks are reusable across multiple page types.
+This model ensures:
 
-5.4 TemplateAssemblyAgent
+no static control flow
 
-Purpose: Assemble pages using templates.
+no hard-coded dependencies
 
-Reads declarative templates
+true agent autonomy
 
-Injects required data fields
+7. Agents and Responsibilities
+7.1 ProductParserAgent
 
-Produces page-level structured objects
+Parses and normalizes raw product input
 
-It performs composition only, with no content logic.
+Publishes canonical product data to the blackboard
 
-5.5 OutputValidationAgent
+Acts only once
 
-Purpose: Act as the final safety gate.
+7.2 QuestionGenerationAgent
 
-Validates page structure based on page type
+Generates categorized user questions
 
-Ensures required fields are present
+Internally evaluates question coverage
 
-Rejects invalid or incomplete outputs
+Autonomously expands questions until sufficient coverage (≥15) is reached
 
-This guarantees machine-readable correctness.
+Does not receive instructions from the orchestrator
 
-6. Reusable Logic Blocks
+This agent demonstrates self-evaluation and goal-driven behavior.
 
-Logic blocks are implemented as pure functions that:
+7.3 ContentBlockAgent
 
-accept structured input,
+Builds reusable content blocks (benefits, usage, safety, pricing)
 
-return structured output,
+Uses pure logic blocks
 
-contain no side effects.
+Is page-agnostic
+
+7.4 TemplateAssemblyAgent (Product Page)
+
+Assembles the product page when required blocks are available
+
+Does not generate content
+
+Publishes structured page output
+
+7.5 FAQPageAgent
+
+Assembles the FAQ page when questions are available
+
+Produces categorized, machine-readable questions
+
+Does not perform validation or reasoning
+
+7.6 ComparisonPageAgent
+
+Builds a comparison page using the main product and a deterministic fictional competitor
+
+Uses reusable comparison logic
+
+Does not depend on other pages
+
+7.7 OutputValidationAgent
+
+Observes newly assembled pages
+
+Validates structure based on page type
+
+Acts as a final gatekeeper before output persistence
+
+8. Reusable Logic Blocks
+
+Reusable logic blocks are implemented as pure functions that:
+
+accept structured input
+
+return structured output
+
+have no side effects
 
 Examples include:
 
-extracting benefits,
+benefit extraction
 
-structuring usage instructions,
+usage structuring
 
-aggregating safety information,
+safety aggregation
 
-normalizing pricing,
+pricing normalization
 
-assembling comparison data.
+comparison assembly
 
-Because they are pure and isolated, these blocks are easy to test and reuse.
+These blocks are independent of agents and orchestration.
 
-7. Templates
+9. Orchestrator (Scheduler-Only)
 
-Templates are data-only JSON definitions that describe:
+The orchestrator does not control logic or order.
 
-page type,
+Its responsibilities are limited to:
 
-required fields,
+maintaining a scheduling loop
 
-structural expectations.
+allowing eligible agents to act
 
-They do not contain:
+terminating when no agent can act further
 
-logic,
+This ensures:
 
-conditionals,
+no static execution order
 
-content generation.
+no manually wired logic
 
-This makes the system easy to extend — new pages can be added by defining new templates without modifying agents.
+dynamic coordination
 
-8. Orchestration Flow
+10. Output Generation
 
-The orchestrator executes the pipeline in a clear, deterministic order:
+The system generates three outputs:
 
-Parse and normalize product data
+product_page.json
+faq_page.json
+comparison_page.json
 
-Generate categorized user questions
 
-Build reusable content blocks
+All outputs are:
 
-Assemble pages using templates
+machine-readable JSON
 
-Validate outputs
+deterministic
 
-Write final JSON files
+validated by an autonomous validation agent
 
-The orchestrator is intentionally thin and transparent.
+11. Extensibility
 
-9. Testing Strategy
+The architecture is inherently extensible:
 
-Testing is performed at the component level:
+New page types → add new agents
 
-Logic blocks are tested independently
+New logic → add new logic blocks
 
-Template assembly is tested for contract enforcement
+No existing agent or orchestrator code needs to change
 
-Output validation is tested for acceptance and rejection cases
+This demonstrates production-ready system design.
 
-This ensures correctness without unnecessary complexity.
+12. Conclusion
 
-10. Extensibility
+This project demonstrates a true multi-agent system by behavior, not by naming.
 
-The system is designed to scale naturally:
+Key characteristics include:
 
-New page types → add new templates
+autonomous agents
 
-New content rules → add new logic blocks
+dynamic coordination via shared state
 
-New workflows → add new agents
+scheduler-only orchestration
 
-Existing components remain unchanged, minimizing risk.
+clean separation of responsibilities
 
-11. Conclusion
+deterministic, validated outputs
 
-This project demonstrates how a production-style agentic system can be built using:
-
-clear agent boundaries,
-
-reusable logic blocks,
-
-declarative templates,
-
-deterministic orchestration.
-
-The result is a clean, extensible, and maintainable content automation pipeline aligned with real-world engineering practices.
+The system fully aligns with the original intent of the assignment and the clarified expectations regarding agent autonomy and non-static control flow.

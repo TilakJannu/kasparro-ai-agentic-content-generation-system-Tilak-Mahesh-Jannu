@@ -1,74 +1,72 @@
-class OutputValidationAgent:
+from core.agent_base import Agent
+
+
+class OutputValidationAgent(Agent):
     """
-    Responsibility:
-    - Validate assembled page objects before serialization
+    Autonomous agent responsible for validating assembled pages.
 
-    This agent performs:
-    ✔ structural validation
-    ✔ required-field checks
-
-    This agent does NOT:
-    ✘ modify content
-    ✘ generate data
-    ✘ write output files
+    This agent:
+    - observes assembled pages in shared state
+    - validates structure based on page_type
+    - marks pages as validated
+    - does NOT control orchestration or execution order
     """
-
-    REQUIRED_BASE_FIELDS = ["page_type"]
-
-    def run(self, page: dict) -> dict:
-        """
-        Entry point for validation.
-
-        Input:
-        - page: assembled page dictionary
-
-        Output:
-        - same page if valid
-        - raises ValueError if invalid
-        """
-        self._validate_base_structure(page)
-        self._validate_page_specific_structure(page)
-        return page
 
     # -------------------------
-    # Internal validation
+    # Agent interface methods
     # -------------------------
 
-    def _validate_base_structure(self, page: dict):
+    def can_act(self, state) -> bool:
+        """
+        The agent can act if at least one page exists
+        that has not yet been validated.
+        """
+        return any(
+            page_name not in state.validated_pages
+            for page_name in state.pages
+        )
+
+    def act(self, state) -> None:
+        """
+        Validate all unvalidated pages in shared state.
+        """
+        for page_name, page in state.pages.items():
+            if page_name in state.validated_pages:
+                continue
+
+            self._validate_page(page)
+            state.validated_pages.add(page_name)
+
+    # -------------------------
+    # Internal validation logic
+    # -------------------------
+
+    def _validate_page(self, page: dict) -> None:
         if not isinstance(page, dict):
             raise ValueError("Page must be a dictionary")
 
-        for field in self.REQUIRED_BASE_FIELDS:
-            if field not in page:
-                raise ValueError(f"Missing required base field: '{field}'")
+        if "page_type" not in page:
+            raise ValueError("Missing required field: 'page_type'")
 
-    def _validate_page_specific_structure(self, page: dict):
-        page_type = page.get("page_type")
+        page_type = page["page_type"]
 
-        if page_type == "faq_page":
-            self._validate_faq_page(page)
-
-        elif page_type == "product_page":
+        if page_type == "product_page":
             self._validate_product_page(page)
+
+        elif page_type == "faq_page":
+            self._validate_faq_page(page)
 
         elif page_type == "comparison_page":
             self._validate_comparison_page(page)
 
         else:
-            raise ValueError(f"Unknown page_type: '{page_type}'")
+            raise ValueError(f"Unknown page_type: {page_type}")
 
     # -------------------------
-    # Page-type validators
+    # Page-specific validators
     # -------------------------
 
-    def _validate_faq_page(self, page: dict):
-        if "questions" not in page:
-            raise ValueError("FAQ page must contain 'questions'")
-
-        if not isinstance(page["questions"], dict):
-            raise ValueError("'questions' must be a dictionary")
-
-    def _validate_product_page(self, page: dict):
+    def _validate_product_page(self, page: dict) -> None:
         required_fields = [
             "name",
             "benefits_block",
@@ -83,16 +81,18 @@ class OutputValidationAgent:
                     f"Product page missing required field: '{field}'"
                 )
 
-    def _validate_comparison_page(self, page: dict):
+    def _validate_faq_page(self, page: dict) -> None:
+        if "questions" not in page:
+            raise ValueError("FAQ page missing required field: 'questions'")
+
+        if not isinstance(page["questions"], dict):
+            raise ValueError("'questions' must be a dictionary")
+
+    def _validate_comparison_page(self, page: dict) -> None:
         if "comparison" not in page:
-            raise ValueError("Comparison page must contain 'comparison'")
-
-        comparison = page["comparison"]
-
-        if not isinstance(comparison, dict):
-            raise ValueError("'comparison' must be a dictionary")
-
-        if "product_a" not in comparison or "product_b" not in comparison:
             raise ValueError(
-                "Comparison must include 'product_a' and 'product_b'"
+                "Comparison page missing required field: 'comparison'"
             )
+
+        if not isinstance(page["comparison"], dict):
+            raise ValueError("'comparison' must be a dictionary")
